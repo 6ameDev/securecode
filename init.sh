@@ -10,17 +10,17 @@ echo "  1) NodeJS"
 echo "  2) Python"
 echo "  3) Go"
 echo "  4) Java"
-echo "  5) Generic (no language tooling)"
+echo "  5) Basic (no language tooling)"
 echo ""
 
 read -rp "Enter choice [1-5]: " choice
 
 case $choice in
-  1) stack="node"; stack_name="NodeJS" ;;
-  2) stack="python"; stack_name="Python" ;;
-  3) stack="go"; stack_name="Go" ;;
-  4) stack="java"; stack_name="Java" ;;
-  5) stack="generic"; stack_name="Generic" ;;
+  1) image="mcr.microsoft.com/devcontainers/typescript-node"; user="node"; stack_name="NodeJS" ;;
+  2) image="mcr.microsoft.com/devcontainers/python"; user="vscode"; stack_name="Python" ;;
+  3) image="mcr.microsoft.com/devcontainers/go"; user="vscode"; stack_name="Go" ;;
+  4) image="mcr.microsoft.com/devcontainers/java"; user="vscode"; stack_name="Java" ;;
+  5) image="mcr.microsoft.com/devcontainers/base:ubuntu"; user="vscode"; stack_name="Basic" ;;
   *)
     echo "Invalid choice. Exiting."
     exit 1
@@ -28,24 +28,18 @@ case $choice in
 esac
 
 echo ""
-echo "Configuring for: $stack"
+echo "Configuring for: $stack_name"
 
 # Update the base devcontainer.json with stack-specific values
-if [ "$stack" = "generic" ]; then
-  jq --arg name "SecureCode - ${stack_name}" \
-     '.name = $name | del(.features)' \
-     ".devcontainer/devcontainer.json" > ".devcontainer/devcontainer.json.tmp"
-else
-  jq --arg name "SecureCode - ${stack_name}" \
-     --arg stack "$stack" \
-     '.name = $name | .features = { ("ghcr.io/devcontainers/features/" + $stack + ":1"): {} }' \
-     ".devcontainer/devcontainer.json" > ".devcontainer/devcontainer.json.tmp"
-fi
+jq --arg image "$image" \
+   --arg user "$user" \
+   '.image = $image | .remoteUser = $user' \
+   ".devcontainer/devcontainer.json" > ".devcontainer/devcontainer.json.tmp"
 
 mv ".devcontainer/devcontainer.json.tmp" ".devcontainer/devcontainer.json"
 
 # Clean up this script
-# rm -f init.sh
+rm -f init.sh
 
 echo ""
 echo "Done! Next steps:"
