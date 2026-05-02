@@ -1,0 +1,51 @@
+{
+  "name": "SecureCode - Java",
+  "build": {
+    "dockerfile": "../../Dockerfile"
+  },
+  "remoteUser": "vscode",
+  "runArgs": [
+    "--cap-drop=ALL",
+    "--read-only",
+    "--security-opt=no-new-privileges:true"
+  ],
+  "mounts": [
+    {
+      "type": "tmpfs",
+      "target": "/tmp"
+    },
+    {
+      "type": "tmpfs",
+      "target": "/var/tmp"
+    },
+    {
+      "type": "tmpfs",
+      "target": "/run"
+    },
+    {
+      "type": "tmpfs",
+      "target": "/home/vscode/.cache"
+    },
+    {
+      "type": "tmpfs",
+      "target": "/home/vscode/.config"
+    },
+    {
+      "type": "tmpfs",
+      "target": "/home/vscode/.local"
+    }
+  ],
+  "forwardPorts": [3000, 5000, 8000, 8080],
+  "postCreateCommand": "mkdir -p /home/vscode/.config /home/vscode/.local /home/vscode/.cache && chown -R vscode:vscode /home/vscode/.config /home/vscode/.local /home/vscode/.cache",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "remote.autoForwardPorts": false
+      }
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": {}
+  }
+}
