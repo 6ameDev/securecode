@@ -16,11 +16,11 @@ echo ""
 read -rp "Enter choice [1-5]: " choice
 
 case $choice in
-  1) stack="node" ;;
-  2) stack="python" ;;
-  3) stack="go" ;;
-  4) stack="java" ;;
-  5) stack="generic" ;;
+  1) stack="node"; stack_name="NodeJS" ;;
+  2) stack="python"; stack_name="Python" ;;
+  3) stack="go"; stack_name="Go" ;;
+  4) stack="java"; stack_name="Java" ;;
+  5) stack="generic"; stack_name="Generic" ;;
   *)
     echo "Invalid choice. Exiting."
     exit 1
@@ -30,16 +30,22 @@ esac
 echo ""
 echo "Configuring for: $stack"
 
-# Copy the selected template into place
-cp ".devcontainer/templates/$stack/devcontainer.json" ".devcontainer/devcontainer.json"
+# Update the base devcontainer.json with stack-specific values
+if [ "$stack" = "generic" ]; then
+  jq --arg name "SecureCode - ${stack_name}" \
+     '.name = $name | del(.features)' \
+     ".devcontainer/devcontainer.json" > ".devcontainer/devcontainer.json.tmp"
+else
+  jq --arg name "SecureCode - ${stack_name}" \
+     --arg stack "$stack" \
+     '.name = $name | .features = { ("ghcr.io/devcontainers/features/" + $stack + ":1"): {} }' \
+     ".devcontainer/devcontainer.json" > ".devcontainer/devcontainer.json.tmp"
+fi
 
-# Fix the Dockerfile path so it is correct relative to .devcontainer/devcontainer.json
-sed -i.bak 's|"dockerfile": "../../Dockerfile"|"dockerfile": "Dockerfile"|g' ".devcontainer/devcontainer.json"
-rm -f ".devcontainer/devcontainer.json.bak"
+mv ".devcontainer/devcontainer.json.tmp" ".devcontainer/devcontainer.json"
 
-# Clean up template files and this script
-rm -rf .devcontainer/templates/
-rm -f init.sh
+# Clean up this script
+# rm -f init.sh
 
 echo ""
 echo "Done! Next steps:"
