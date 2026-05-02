@@ -1,39 +1,13 @@
 {
   "name": "SecureCode",
-  "build": {
-    "dockerfile": "Dockerfile"
-  },
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
   "remoteUser": "vscode",
   "runArgs": [
     "--cap-drop=ALL",
-    "--read-only",
     "--security-opt=no-new-privileges:true"
   ],
   "mounts": [
-    {
-      "type": "tmpfs",
-      "target": "/tmp"
-    },
-    {
-      "type": "tmpfs",
-      "target": "/var/tmp"
-    },
-    {
-      "type": "tmpfs",
-      "target": "/run"
-    },
-    {
-      "type": "tmpfs",
-      "target": "/home/vscode/.cache"
-    },
-    {
-      "type": "tmpfs",
-      "target": "/home/vscode/.config"
-    },
-    {
-      "type": "tmpfs",
-      "target": "/home/vscode/.local"
-    }
+    "type=bind,source=${localWorkspaceFolder}/.git,target=${containerWorkspaceFolder}/.git,readonly"
   ],
   "forwardPorts": [
     3000,
@@ -41,7 +15,7 @@
     8000,
     8080
   ],
-  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "postCreateCommand": "curl -fsSL https://opencode.ai/install | bash",
   "customizations": {
     "vscode": {
       "settings": {
