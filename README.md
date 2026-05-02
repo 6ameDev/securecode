@@ -1,130 +1,78 @@
 # SecureCode
 
-A **GitHub repo template** for running the [OpenCode](https://opencode.ai) AI agent inside a hardened, disposable VS Code Dev Container.
+A hardened, disposable development container for AI-assisted coding. If anything goes wrong inside, destroy it and start fresh in seconds. Your host machine and git history stay untouched.
 
-The container is your blast radius. If you ever suspect compromise, destroy it and recreate it in seconds. Your host machine stays untouched.
+## What threats does it protect against?
 
----
-
-## Security Model
-
-| Threat | Mitigation |
+| Threat | What SecureCode does |
 |---|---|
-| Container escape to host | VM-level isolation (Docker Desktop / Colima on macOS) |
-| Filesystem tampering outside project | Only the project directory is bind-mounted; host home, SSH keys, and system files are inaccessible |
-| Credential theft | No Git credentials, SSH keys, or API tokens are mounted into the container. Git operations stay on the host. |
-| Privilege escalation | `--cap-drop=ALL`, `--read-only` root filesystem, `no-new-privileges`, no `sudo` |
-| Persistence across recreations | All runtime state (`/tmp`, `~/.config`, `~/.local`, `~/.cache`) is stored in ephemeral tmpfs mounts |
+| Malicious dependencies trying to escape the container | Container runs with dropped capabilities and privilege restrictions |
+| Code or credentials leaking from your host | Only your project folder is visible inside; SSH keys, GitHub tokens, and host files are never mounted |
+| Malicious code persisting across sessions | One command destroys the container and all its state |
+| Your git history being tampered with | The `.git` directory is mounted read-only from the container |
 
-**Tradeoffs accepted:**
-- The container has unrestricted outbound internet (required for OpenCode to call LLM APIs and download packages).
-- The container can read/write your project files via the bind-mount. Corruption is recoverable with git.
-- OpenCode must be reconfigured after every container recreation (no persistent API keys in the container).
+## Supported stacks
 
----
+Pick your language during setup. SecureCode pulls the official Microsoft devcontainer image for your stack.
+
+- Node.js / TypeScript
+- Python
+- Go
+- Java
+- Basic (no language tooling)
 
 ## Prerequisites
 
-- **macOS** (or Linux)
-- **Docker** — [Docker Desktop](https://www.docker.com/products/docker-desktop/) or [Colima](https://github.com/abiosoft/colima) (`brew install colima && colima start`)
-- **VS Code** with the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+- macOS or Linux
+- Docker Desktop or Colima
+- VS Code with the Dev Containers extension
 
----
-
-## Quick Start
-
-1. **Create a new repo** from this GitHub template (click **"Use this template"**).
-2. **Clone** your new repo locally.
-3. **Run the initializer:**
-   ```bash
-   ./init.sh
-   ```
-   Select your language stack. The script configures the devcontainer and then deletes itself.
-4. **Open in VS Code:**
-   ```bash
-   make shell
-   # Then click "Reopen in Container" when prompted
-   ```
-5. **Start OpenCode** inside the container terminal:
-   ```bash
-   opencode
-   ```
-
----
-
-## Daily Workflow
-
-### Two-Terminal Model
-
-| Location | Purpose |
-|---|---|
-| **Host terminal** (e.g., iTerm) | `git clone`, `git commit`, `git push`, `git pull` |
-| **VS Code integrated terminal (inside container)** | `opencode`, builds, tests, package managers |
-
-**Never run git push from inside the container.** The container has no access to your GitHub credentials, which prevents a compromised agent from exfiltrating your PAT or pushing malicious code.
-
-### Makefile Shortcuts
+## Quick start
 
 ```bash
-make shell   # Open this folder in VS Code
-make nuke    # Destroy the devcontainer and prune unused Docker objects
+# 1. Run the initializer and pick your stack
+./init.sh
+
+# 2. Open in VS Code
+make shell
+# Click "Reopen in Container" when prompted
+
+# 3. Start coding with your AI assistant
+opencode
 ```
 
----
+## Daily workflow
 
-## Destroy and Recreate
+**Host terminal:** `git clone`, `commit`, `push`, `pull`
 
-If you ever want a clean slate:
+**Container terminal:** `opencode`, builds, tests, package installs
+
+**Never run git push from inside the container.** The container has no access to your GitHub credentials, which prevents a compromised agent from pushing malicious code or exfiltrating your tokens.
+
+## Makefile commands
 
 ```bash
-make nuke
-# Then reopen in VS Code: Command Palette → "Dev Containers: Rebuild Container"
+make init        # Run the stack selector
+make shell       # Open in VS Code
+make nuke        # Destroy container and show git status
+make nuke-force  # Destroy container and hard-reset git workspace
 ```
 
-All container state is wiped. Your project files are safe on the host because they live in git and on your local disk.
+Use `make nuke` when you want a clean container. If git shows uncommitted changes, it will warn you before touching anything. Use `make nuke-force` when you are certain you want to discard all workspace changes and start completely fresh.
 
----
+## Supported AI tools
 
-## Supported Stacks
-
-The initializer configures the appropriate Devcontainer Feature for your stack:
-
-| Stack | Feature |
-|---|---|
-| Node.js / TypeScript | `ghcr.io/devcontainers/features/node:1` |
-| Python | `ghcr.io/devcontainers/features/python:1` |
-| Go | `ghcr.io/devcontainers/features/go:1` |
-| Java | `ghcr.io/devcontainers/features/java:1` |
-| Generic | No language tooling — just the hardened base |
-
-You can add more features later by editing `.devcontainer/devcontainer.json`.
-
----
-
-## Hardening Details
-
-- **Base image:** `mcr.microsoft.com/devcontainers/base:ubuntu` (maintained by Microsoft)
-- **Container user:** `vscode` (non-root, no `sudo`)
-- **Capabilities:** All Linux capabilities dropped (`--cap-drop=ALL`)
-- **Root FS:** Read-only with writable tmpfs overlays for `/tmp`, `/var/tmp`, `/run`, `~/.cache`, `~/.config`, `~/.local`
-- **Port forwarding:** Explicit allow-list only (`3000`, `5000`, `8000`, `8080`)
-- **Docker socket:** Not mounted. The container cannot spawn other containers.
-- **VS Code extensions:** None pre-installed inside the container.
-
----
+Currently ships with [OpenCode](https://opencode.ai) pre-configured. OpenCode installs automatically when the container starts.
 
 ## Troubleshooting
 
 **OpenCode says "command not found"**
-> The `PATH` includes `~/.opencode/bin` via container environment. If a specific shell session cannot find it, run `export PATH="$HOME/.opencode/bin:$PATH"`.
 
-**Permission denied when writing to `~/.config`**
-> The `postCreateCommand` should fix tmpfs ownership on first start. If not, run: `sudo chown -R vscode:vscode ~/.config ~/.local ~/.cache` (note: `sudo` is removed in this image, so this should not happen).
+The PATH includes `~/.opencode/bin` via container environment. If a specific shell session cannot find it, run `export PATH="$HOME/.opencode/bin:$PATH"`.
 
 **Port not accessible from host browser**
-> Only ports `3000`, `5000`, `8000`, and `8080` are forwarded. If your app uses a different port, add it to `forwardPorts` in `.devcontainer/devcontainer.json` and rebuild the container.
 
----
+Only ports `3000`, `5000`, `8000`, and `8080` are forwarded. If your app uses a different port, add it to `forwardPorts` in `.devcontainer/devcontainer.json` and rebuild the container.
 
 ## License
 

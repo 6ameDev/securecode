@@ -30,10 +30,15 @@ esac
 echo ""
 echo "Configuring for: $stack_name"
 
+# Compute deterministic container name: sc-<project>-<hash>
+# Hash is first 4 chars of SHA1 of the full absolute path
+CONTAINER_NAME="sc-$(basename "$(pwd)")-$(echo -n "$(pwd)" | shasum | cut -c1-4)"
+
 # Update the base devcontainer.json with stack-specific values
 jq --arg image "$image" \
    --arg user "$user" \
-   '.image = $image | .remoteUser = $user' \
+   --arg name "$CONTAINER_NAME" \
+   '.image = $image | .remoteUser = $user | .runArgs = ["--cap-drop=ALL", "--security-opt=no-new-privileges:true", "--name", $name]' \
    ".devcontainer/devcontainer.json" > ".devcontainer/devcontainer.json.tmp"
 
 mv ".devcontainer/devcontainer.json.tmp" ".devcontainer/devcontainer.json"
