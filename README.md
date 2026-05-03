@@ -27,18 +27,27 @@ Pick your language during setup. SecureCode pulls the official Microsoft devcont
 - Docker Desktop or Colima
 - VS Code with the Dev Containers extension
 
+## Getting started
+
+1. Click **Use this template** on GitHub to create your project based on this template.
+2. **Clone** your new repo to your local machine.
+3. **Run the initializer:**
+   ```bash
+   cd your-project-name
+   ./init.sh
+   ```
+
 ## Quick start
 
 ```bash
-# 1. Run the initializer and pick your stack
-./init.sh
+# 1. Open in VS Code
+Run `code .` in terminal or Open your project in VS Code
 
-# 2. Open in VS Code
-make shell
-# Click "Reopen in Container" when prompted
+# 2. Dev Container
+Click "Reopen in Container" when prompted within VS Code
 
-# 3. Start coding with your AI assistant
-opencode
+# 2. Start coding with your AI assistant
+After installation is complete, run `opencode` inside a new VS Code terminal
 ```
 
 ## Daily workflow
@@ -53,7 +62,6 @@ opencode
 
 ```bash
 make init        # Run the stack selector
-make shell       # Open in VS Code
 make nuke        # Destroy container and show git status
 make nuke-force  # Destroy container and hard-reset git workspace
 ```
